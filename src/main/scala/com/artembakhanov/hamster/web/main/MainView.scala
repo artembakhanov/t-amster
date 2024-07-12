@@ -115,7 +115,7 @@ class MainView(context: ViewContext[AppState, MainState]) extends View[AppState,
                 button(
                   clazz := "w-56 h-56 bg-white rounded-full shadow-lg flex items-center justify-center mb-4 mt-8",
                   img(
-                    src   := "/static/chomik.png",
+                    src   := s"/static/chomik${level(gameInfo.allTimeMax)}.png",
                     alt   := "Hamster Image",
                     clazz := "w-52 h-52 rounded-full bg-zinc-800",
                   ),

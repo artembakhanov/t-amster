@@ -23,7 +23,7 @@ class AppView(mainView: MainView) extends View[AppState, AppState](Context[ZIO[A
       ),
       body(state match
         case AppState.NotAuthorized =>
-          div("Loading, please wait...")
+          div(clazz := "loader")
 
         case AppState.Authorized(level, state) =>
           mainView.view(state),
