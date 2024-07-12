@@ -7,6 +7,7 @@ import zio.json.JsonDecoder
 import zio.json.*
 import com.artembakhanov.hamster.domain.UserInfo
 import com.artembakhanov.hamster.web.main.MainState
+import com.artembakhanov.hamster.web.main.Tab
 import com.artembakhanov.hamster.domain.GameInfo
 import zio.cache.Cache
 import zio.cache.Lookup
@@ -32,7 +33,7 @@ object Extensions:
             gameInfoRef <- stateCache.get(userInfo.id)
             _           <- promise.succeed(gameInfoRef)
             state       <- gameInfoRef.get
-            _           <- access.transition(_ => AppState.Authorized(AuthorizationLevel.User, MainState(state)))
+            _           <- access.transition(_ => AppState.Authorized(AuthorizationLevel.User, MainState(state, tab = Tab.Tap)))
           yield ()
         }
         .flatMap(_ =>
@@ -94,6 +95,8 @@ object Extensions:
               .focus(_.remaining)
               .modify(previous => (previous + increaseRemaining).min(3000)),
           )
+          .focus(_.state.userInfo.gameInfo.value)
+          .modify(prev => prev.focus(_.allTimeMax).set(prev.count max prev.allTimeMax))
       }
     yield ()
 
