@@ -43,7 +43,7 @@ class TouchWrap extends HTMLElement {
     }
 
     connectedCallback() {
-        if (window.Telegram.WebApp.platform === 'tdesktop') {
+        if (['tdesktop', 'macos'].includes(window.Telegram.WebApp.platform)) {
             this.addEventListener('click', this.handleTouchStart);
         } else {
             this.addEventListener('touchstart', this.handleTouchStart, { passive: false });

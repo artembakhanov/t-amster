@@ -37,10 +37,10 @@ object Extensions:
         }
         .flatMap(_ =>
           for
-            ref   <- promise.await
             scope <- Scope.make
             _ <-
-              ref.get
+              promise.await
+                .flatMap(_.get)
                 .flatMap(userInfo => dataService.updateGameInfo(userInfo.id, userInfo.gameInfo.value))
                 .logError("There was an error while saving progress")
                 .ignore
@@ -48,17 +48,22 @@ object Extensions:
                 .forkIn(scope)
 
             _ <- updateCounters(access).ignore.repeat(Schedule.fixed(1.second)).forkIn(scope)
-          yield (ref, scope),
+          yield scope,
         )
-        .map((ref, scope) =>
+        .map(scope =>
           Extension.Handlers(
             onState = {
               case state: AppState.Authorized =>
-                ref.set(state.state.userInfo)
+                for
+                  noReload <- promise.isDone
+                  _        <- stateCache.get(state.state.userInfo.id).flatMap(promise.succeed).when(!noReload)
+                  _        <- promise.await.flatMap(_.set(state.state.userInfo))
+                yield ()
               case _ => ZIO.unit
             },
             onDestroy = () =>
-              ref.get
+              promise.poll.some.flatten
+                .flatMap(_.get)
                 .flatMap(userInfo =>
                   dataService
                     .updateGameInfo(userInfo.id, userInfo.gameInfo.value),
