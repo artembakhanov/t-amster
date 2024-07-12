@@ -33,7 +33,7 @@ object Extensions:
             gameInfoRef <- stateCache.get(userInfo.id)
             _           <- promise.succeed(gameInfoRef)
             state       <- gameInfoRef.get
-            _           <- access.transition(_ => AppState.Authorized(AuthorizationLevel.User, MainState(state, tab = Tab.Tap)))
+            _ <- access.transition(_ => AppState.Authorized(AuthorizationLevel.User, MainState(state, tab = Tab.Tap)))
           yield ()
         }
         .flatMap(_ =>
@@ -82,10 +82,11 @@ object Extensions:
       now = now_.truncatedTo(ChronoUnit.SECONDS)
 
       _ <- access.maybeTransition { case authorized: AppState.Authorized =>
-        val increaseRemaining =
-          java.time.Duration
-            .between(authorized.state.userInfo.gameInfo.value.lastUpdatedRemaining, now)
-            .toSeconds() * 10
+        val between = java.time.Duration
+          .between(authorized.state.userInfo.gameInfo.value.lastUpdatedRemaining, now)
+          .toSeconds()
+        val increaseRemaining = between * 10
+        val increaseOverall   = between * authorized.state.userInfo.gameInfo.value.perSec
 
         authorized
           .focus(_.state.userInfo.gameInfo.value)
@@ -93,7 +94,9 @@ object Extensions:
             _.focus(_.lastUpdatedRemaining)
               .set(now)
               .focus(_.remaining)
-              .modify(previous => (previous + increaseRemaining).min(3000)),
+              .modify(previous => (previous + increaseRemaining).min(3000))
+              .focus(_.count)
+              .modify(_ + increaseOverall),
           )
           .focus(_.state.userInfo.gameInfo.value)
           .modify(prev => prev.focus(_.allTimeMax).set(prev.count max prev.allTimeMax))

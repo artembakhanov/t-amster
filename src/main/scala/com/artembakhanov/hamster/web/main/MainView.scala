@@ -9,6 +9,9 @@ import com.artembakhanov.hamster.web.korolev.AppState
 import com.artembakhanov.hamster.web.korolev.ViewContext
 import zio.ZLayer
 import monocle.syntax.all.*
+import monocle.Lens
+import com.artembakhanov.hamster.domain.GameInfo.*
+import monocle.macros.GenLens
 
 class MainView(context: ViewContext[AppState, MainState]) extends View[AppState, MainState](context):
   import levsha.dsl.*
@@ -23,7 +26,46 @@ class MainView(context: ViewContext[AppState, MainState]) extends View[AppState,
         .modify(_ - 10)
     else state
 
-  private inline def level(count: Long): String =
+  private case class ImprovementInState(
+      info: Improvement,
+      lens: Lens[MainState, Int],
+      maxLevel: Int,
+      title: String,
+      description: String,
+  )
+
+  private val improvementsInState = List(
+    ImprovementInState(
+      improvement1,
+      GenLens[MainState](_.userInfo.gameInfo.value.level1),
+      maxLevel = 15,
+      title = "⛏️",
+      description = "Increases mining speed",
+    ),
+    ImprovementInState(
+      improvement2,
+      GenLens[MainState](_.userInfo.gameInfo.value.level2),
+      maxLevel = 15,
+      title = "🤲",
+      description = "Enhances resource collection",
+    ),
+    ImprovementInState(
+      improvement3,
+      GenLens[MainState](_.userInfo.gameInfo.value.level3),
+      maxLevel = 15,
+      title = "😮‍💨",
+      description = "Reduces mining fatigue",
+    ),
+    ImprovementInState(
+      improvement4,
+      GenLens[MainState](_.userInfo.gameInfo.value.level4),
+      maxLevel = 15,
+      title = "🦾",
+      description = "Improves tool durability",
+    ),
+  )
+
+  private inline def level(count: Double): String =
     if count < 1000 then "0"
     else if count < 2000 then "1"
     else if count < 3500 then "2"
@@ -51,12 +93,12 @@ class MainView(context: ViewContext[AppState, MainState]) extends View[AppState,
             div(
               clazz := "bg-amber-200 px-4 py-2 rounded-lg shadow-md",
               p(clazz := "text-lg font-semibold text-gray-800", "Credits"),
-              p(clazz := "text-xl text-gray-800", gameInfo.count.toString),
+              p(clazz := "text-xl text-gray-800", gameInfo.count.toLong.toString),
             ),
             div(
               clazz := "bg-blue-200 px-4 py-2 rounded-lg shadow-md",
-              p(clazz := "text-lg font-semibold text-gray-800", "Profit per Sec"),
-              p(clazz := "text-xl text-gray-800", "120"),
+              p(clazz := "text-lg font-semibold text-gray-800", "Profit per Min"),
+              p(clazz := "text-xl text-gray-800", s"${(gameInfo.perSec * 60).toLong}"),
             ),
             div(
               clazz := "bg-green-200 px-4 py-2 rounded-lg shadow-md",
@@ -96,30 +138,42 @@ class MainView(context: ViewContext[AppState, MainState]) extends View[AppState,
               clazz := "flex-grow flex flex-col bg-gray-800 py-4 shadow-md text-white",
               div(
                 clazz := "grid grid-cols-2 gap-4 px-4",
-                button(
-                  clazz := "flex flex-col items-center bg-gray-700 rounded-lg p-4 shadow-lg",
-                  span(clazz := "text-lg font-semibold", "⛏️"),
-                  p(clazz    := "text-sm text-gray-300 font-semibold", "Increases mining speed"),
-                  p(clazz    := "text-sm text-gray-300", "5/sec (Lvl. 0)"),
-                ),
-                button(
-                  clazz := "flex flex-col items-center bg-gray-700 rounded-lg p-4 shadow-lg",
-                  span(clazz := "text-lg font-semibold", "🤲"),
-                  p(clazz    := "text-sm text-gray-300 font-semibold", "Enhances resource collection"),
-                  p(clazz    := "text-sm text-gray-300", "7/sec (Lvl. 0)"),
-                ),
-                button(
-                  clazz := "flex flex-col items-center bg-gray-700 rounded-lg p-4 shadow-lg",
-                  span(clazz := "text-lg font-semibold", "😮‍💨"),
-                  p(clazz    := "text-sm text-gray-300 font-semibold", "Reduces mining fatigue"),
-                  p(clazz    := "text-sm text-gray-300", "4/sec (Lvl. 0)"),
-                ),
-                button(
-                  clazz := "flex flex-col items-center bg-gray-700 rounded-lg p-4 shadow-lg",
-                  span(clazz := "text-lg font-semibold", "🦾"),
-                  p(clazz    := "text-sm text-gray-300 font-semibold", "Improves tool durability"),
-                  p(clazz    := "text-sm text-gray-300", "6/sec (Lvl. 0)"),
-                ),
+                improvementsInState.map { improvement =>
+                  val level = improvement.lens.get(state)
+                  button(
+                    clazz := "flex flex-col items-center bg-gray-700 rounded-lg p-4 shadow-lg",
+                    span(clazz := "text-lg font-semibold", improvement.title),
+                    p(clazz    := "text-sm text-gray-300 font-semibold", improvement.description),
+                    p(
+                      clazz := "text-sm text-gray-300",
+                      s"${(improvement.info.rewards(level) * 60).toLong}/min (Lvl. ${level})",
+                    ),
+                    if level == improvement.maxLevel then "Max. Lvl."
+                    else
+                      seqToNode(
+                        List(
+                          p(
+                            clazz := "text-sm text-gray-300 font-semibold",
+                            s"Buy: ${improvement.info.levelsCost(level)}",
+                          ),
+                          eventZIO("click")(
+                            ZIO.serviceWithZIO[Access](
+                              _.transition(state =>
+                                if state.userInfo.gameInfo.value.count >= improvement.info.levelsCost(level) then
+                                  improvement.lens
+                                    .modify(_ + 1)(state)
+                                    .focus(_.userInfo.gameInfo.value.count)
+                                    .modify(_ - improvement.info.levelsCost(level))
+                                else state,
+                              ),
+                            ),
+                          ),
+                        ),
+                      )
+                    ,
+                  )
+
+                },
               ),
             ),
         footer(
