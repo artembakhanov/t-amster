@@ -1,5 +1,29 @@
 console.log(window.Telegram.WebApp.initDataUnsafe.user);
 
+const tg = window.Telegram.WebApp;
+tg.disableVerticalSwipes();
+tg.expand();
+
+function checkIfReady(resolve) {
+    const interval = setInterval(() => {
+        if (Korolev.ready) resolve(interval);
+    }, 100);
+}
+
+function ready(interval) {
+    clearInterval(interval)
+    let user = window.Telegram.WebApp.initDataUnsafe.user;
+
+    Korolev.invokeCallback('login', JSON.stringify({ id: user.id, firstName: user.first_name, lastName: user.last_name }));
+    this.document.body.dispatchEvent(new Event("login", { bubbles: true }));
+    tg.ready();
+}
+
+window.addEventListener('load', function () {
+    const waitUntilReady = new Promise(checkIfReady);
+    waitUntilReady.then(ready);
+});
+
 class TouchWrap extends HTMLElement {
     constructor() {
         super();
@@ -19,14 +43,24 @@ class TouchWrap extends HTMLElement {
     }
 
     connectedCallback() {
-        this.addEventListener('touchstart', this.handleTouchStart);
+        if (window.Telegram.WebApp.platform === 'tdesktop') {
+            this.addEventListener('click', this.handleTouchStart);
+        } else {
+            this.addEventListener('touchstart', this.handleTouchStart, { passive: false });
+            this.addEventListener('touchmove', function (event) {
+                event.stopPropagation();
+                event.preventDefault();
+            }, { passive: false });
+        }
     }
 
     disconnectedCallback() {
+        this.removeEventListener('click', this.handleTouchStart);
         this.removeEventListener('touchstart', this.handleTouchStart);
     }
 
     handleTouchStart = (event) => {
+        event.preventDefault();
         const customEventName = this.events[this.eventIndex];
         const customEvent = new Event(customEventName, { bubbles: true });
         this.dispatchEvent(customEvent);

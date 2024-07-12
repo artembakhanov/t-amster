@@ -18,17 +18,17 @@ import zio.http.SSLConfig
 import zio.http.Middleware
 
 object Main extends ZIOAppDefault:
-  // val sslConfig = SSLConfig.fromResource(
-  //   behaviour = SSLConfig.HttpBehaviour.Accept,
-  //   certPath = "server.crt",
-  //   keyPath = "server.key",
-  // )
+  val sslConfig = SSLConfig.fromFile(
+    behaviour = SSLConfig.HttpBehaviour.Accept,
+    certPath = "./certificate.crt",
+    keyPath = "./private.key",
+  )
   override def run =
     for
       webRoutes <- WebRoutes.make
       _ <- Server
         .serve(webRoutes.@@(Middleware.debug).handleError(_ => Response.badRequest))
-        .provide(Server.defaultWith(_.port(8088)/*.ssl(sslConfig)*/))
+        .provide(Server.defaultWith(_.port(8089).ssl(sslConfig)))
         .orDie
-
     yield ExitCode.success
+end Main

@@ -1,0 +1,32 @@
+version: '2'
+services:
+  server:
+    image: server
+    build: .
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=user
+      - DB_PASSWORD=password
+      - DB_DATABASE=hamster
+    command: -jar /opt/app/app.jar
+    volumes:
+      - ./certificate.crt:/certificate.crt:ro
+      - ./private.key:/private.key:ro
+    ports:
+      - 8088:8089
+    depends_on:
+      - db
+  db:
+    image: postgres
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=hamster
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+volumes:
+  db-data:
+    driver: local

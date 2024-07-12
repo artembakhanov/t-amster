@@ -1,3 +1,5 @@
 package com.artembakhanov.hamster.web.main
 
-case class MainState(counter: Int)
+import com.artembakhanov.hamster.domain.UserInfo
+
+case class MainState(userInfo: UserInfo)
