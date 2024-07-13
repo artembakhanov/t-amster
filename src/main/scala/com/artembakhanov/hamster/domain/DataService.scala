@@ -9,4 +9,6 @@ trait DataService:
   def getUser(userId: Long): ZIO[Any, SQLException, UserInfo]
 
   def updateGameInfo(userId: Long, gameInfo: GameInfo): ZIO[Any, SQLException, Unit]
+
+  def getAllUsers: ZIO[Any, SQLException, List[UserInfo]]
 end DataService

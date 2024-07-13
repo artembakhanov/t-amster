@@ -36,10 +36,10 @@ object GameInfo:
 
   case class Improvement(baseCost: Long, rate: Double, basePercentReward: Double, scalingFactor: Double):
     val levelsCost: Map[Int, Long] =
-      (0 to 14).map(n => n -> (baseCost * Math.pow(1 + rate, n)).ceil.toLong).toMap
+      (0 to 19).map(n => n -> (baseCost * Math.pow(1 + rate, n)).ceil.toLong).toMap
 
     val rewards: Map[Int, Double] =
-      (1 to 15).map(n => n -> (levelsCost(n - 1) * basePercentReward * Math.pow(n, scalingFactor))).toMap + (0 -> 0)
+      (1 to 20).map(n => n -> (levelsCost(n - 1) * basePercentReward * Math.pow(n, scalingFactor))).toMap + (0 -> 0)
   end Improvement
 
   val improvement1 = Improvement(200, 0.15, 0.005, -0.09)

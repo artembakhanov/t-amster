@@ -38,6 +38,11 @@ class DataServiceLive(dataSource: DataSource) extends DataService:
       .implicitDS
       .someOrFail(SQLException("Does not exist"))
 
+  override def getAllUsers: ZIO[Any, SQLException, List[UserInfo]] =
+    DbContext
+      .run(query[UserInfo])
+      .implicitDS
+
 end DataServiceLive
 
 object DataServiceLive:
