@@ -107,6 +107,7 @@ class MainView(context: ViewContext[AppState, MainState]) extends View[AppState,
             main(
               clazz := "flex-grow flex flex-col items-center justify-center bg-gradient-to-r from-purple-300 to-pink-400 shadow-2xl relative z-20",
               TagDef("touch-wrap")(
+                clazz := "animated-button",
                 button(
                   clazz := "w-56 h-56 bg-white rounded-full shadow-lg flex items-center justify-center mb-4 mt-8",
                   img(
