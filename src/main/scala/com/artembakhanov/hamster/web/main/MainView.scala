@@ -29,7 +29,6 @@ class MainView(context: ViewContext[AppState, MainState]) extends View[AppState,
   private case class ImprovementInState(
       info: Improvement,
       lens: Lens[MainState, Int],
-      maxLevel: Int,
       title: String,
       description: String,
   )
@@ -38,28 +37,24 @@ class MainView(context: ViewContext[AppState, MainState]) extends View[AppState,
     ImprovementInState(
       improvement1,
       GenLens[MainState](_.userInfo.gameInfo.value.level1),
-      maxLevel = 20,
       title = "⛏️",
       description = "Increases mining speed",
     ),
     ImprovementInState(
       improvement2,
       GenLens[MainState](_.userInfo.gameInfo.value.level2),
-      maxLevel = 20,
       title = "🤲",
       description = "Enhances resource collection",
     ),
     ImprovementInState(
       improvement3,
       GenLens[MainState](_.userInfo.gameInfo.value.level3),
-      maxLevel = 20,
       title = "😮‍💨",
       description = "Reduces mining fatigue",
     ),
     ImprovementInState(
       improvement4,
       GenLens[MainState](_.userInfo.gameInfo.value.level4),
-      maxLevel = 20,
       title = "🦾",
       description = "Improves tool durability",
     ),
@@ -139,7 +134,7 @@ class MainView(context: ViewContext[AppState, MainState]) extends View[AppState,
               div(
                 clazz := "grid grid-cols-2 gap-4 px-4",
                 improvementsInState.map { improvement =>
-                  val level = improvement.lens.get(state)
+                  val level = improvement.lens.get(state).min(improvement.info.maxLevel)
                   button(
                     clazz := "flex flex-col items-center bg-gray-700 rounded-lg p-4 shadow-lg",
                     span(clazz := "text-lg font-semibold", improvement.title),
@@ -148,7 +143,7 @@ class MainView(context: ViewContext[AppState, MainState]) extends View[AppState,
                       clazz := "text-sm text-gray-300",
                       s"${(improvement.info.rewards(level) * 60).toLong}/min (Lvl. ${level})",
                     ),
-                    if level == improvement.maxLevel then "Max. Lvl."
+                    if level >= improvement.info.maxLevel then "Max. Lvl."
                     else
                       seqToNode(
                         List(
@@ -161,7 +156,7 @@ class MainView(context: ViewContext[AppState, MainState]) extends View[AppState,
                               _.transition(state =>
                                 if state.userInfo.gameInfo.value.count >= improvement.info.levelsCost(level) then
                                   improvement.lens
-                                    .modify(_ + 1)(state)
+                                    .modify(level => (level + 1).min(improvement.info.maxLevel))(state)
                                     .focus(_.userInfo.gameInfo.value.count)
                                     .modify(_ - improvement.info.levelsCost(level))
                                 else state,
