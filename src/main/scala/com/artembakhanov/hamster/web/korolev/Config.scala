@@ -10,6 +10,7 @@ import korolev.Context
 import com.artembakhanov.hamster.web.main.MainState
 import korolev.Extension
 import scala.concurrent.duration.*
+import levsha.dsl.html
 
 object Config:
   val layer = ZLayer:
@@ -28,5 +29,6 @@ object Config:
       extensions = extensions,
       heartbeatInterval = 2.seconds,
       sessionIdleTimeout = 5.seconds,
+      connectionLostWidget = html.div(html.clazz := "blur-overlay", html.div(html.clazz := "z-40 loader")),
     )
 end Config

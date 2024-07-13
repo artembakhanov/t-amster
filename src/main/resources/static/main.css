@@ -44,3 +44,14 @@ body {
 .animated-button:active {
     transform: scale(1.1);
 }
+
+.blur-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    z-index: 40;
+}
