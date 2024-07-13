@@ -108,8 +108,8 @@ object Extensions:
       given Runtime[Any] <- ZIO.runtime
       dataService        <- ZIO.service[DataService]
       stateCache <- Cache.make[Long, Any, Nothing, Ref[UserInfo]](
-        2048,
-        1.hour,
+        4096,
+        12.hours,
         Lookup(id =>
           for
             info <- dataService.getUser(id).orElseSucceed(UserInfo(id, "Errored user"))
