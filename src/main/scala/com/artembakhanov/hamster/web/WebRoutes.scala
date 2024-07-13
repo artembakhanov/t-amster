@@ -30,7 +30,9 @@ object WebRoutes:
           usersWithScores = users
             .sortBy(u => -u.gameInfo.value.perSec)
             .map(userInfo => LeaderboardEntry(userInfo, (userInfo.gameInfo.value.perSec * 60).toLong))
-        yield Response.json(usersWithScores.toJsonPretty)
+        yield Response
+          .json(usersWithScores.toJsonPretty)
+          .addHeader(Header.ContentType(MediaType.application.json, charset = Some(Charsets.Utf8)))
       }
     }
 
